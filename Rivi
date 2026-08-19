@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candidate Note Composer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F4F2ED;
+    --paper-raised: #FBFAF7;
+    --ink: #21252B;
+    --ink-soft: #565B62;
+    --rule: #D9D4C7;
+    --rule-strong: #B9B2A0;
+    --accent: #3E6D62;       /* deep archive-green, "approved" tone */
+    --accent-soft: #E3EAE6;
+    --seal: #B08A2E;         /* brass seal gold */
+    --seal-soft: #F1E7CC;
+    --error: #A23B2E;
+    --radius: 3px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 28px 40px 22px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .brand h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .brand .kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule-strong);
+    padding: 3px 8px;
+    border-radius: var(--radius);
+  }
+
+  header p.tagline {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    max-width: 420px;
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) 140px minmax(360px, 1.15fr);
+    gap: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 980px) {
+    main { grid-template-columns: 1fr; }
+    .seal-column { order: 2; padding: 18px 0 !important; }
+    .sources-column { order: 1; }
+    .draft-column { order: 3; border-left: none !important; border-top: 1px solid var(--rule); }
+  }
+
+  section.panel {
+    padding: 32px 40px 40px;
+  }
+
+  .sources-column {
+    border-right: 1px solid var(--rule);
+  }
+
+  .draft-column {
+    border-left: 1px solid var(--rule);
+  }
+
+  .field-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    padding: 8px 2px;
+    border: none;
+    border-bottom: 1.5px solid var(--rule-strong);
+    background: transparent;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  .name-block { margin-bottom: 28px; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tab-btn {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    background: transparent;
+    border: none;
+    padding: 10px 14px 12px;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+    border-bottom: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tab-btn .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--rule-strong);
+    transition: background .15s ease;
+  }
+
+  .tab-btn.filled .dot { background: var(--accent); }
+
+  .tab-btn.active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panels { margin-top: 16px; }
+
+  textarea {
+    width: 100%;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    padding: 14px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper-raised);
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  .source-textarea { min-height: 260px; display: none; }
+  .source-textarea.active { display: block; }
+
+  .source-hint {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 8px 0 0;
+  }
+
+  .generate-row {
+    margin-top: 26px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  button.primary {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--paper-raised);
+    background: var(--ink);
+    border: none;
+    padding: 12px 22px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent); }
+  button.primary:disabled { opacity: .45; cursor: not-allowed; }
+
+  button.ghost {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: transparent;
+    border: 1px solid var(--rule-strong);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  button.ghost:hover { border-color: var(--ink); color: var(--ink); }
+
+  .generate-note {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  /* --- seal column --- */
+  .seal-column {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 12px;
+  }
+
+  .seal-wrap {
+    position: sticky;
+    top: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .seal {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 2px solid var(--rule-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: border-color .3s ease;
+  }
+
+  .seal svg { width: 44px; height: 44px; }
+
+  .seal .ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 2px dashed transparent;
+  }
+
+  .seal.state-idle { border-color: var(--rule-strong); }
+  .seal.state-idle svg { stroke: var(--rule-strong); }
+
+  .seal.state-working { border-color: var(--seal); }
+  .seal.state-working .ring {
+    border-color: var(--seal-soft) transparent var(--seal-soft) transparent;
+    animation: spin 1.1s linear infinite;
+  }
+  .seal.state-working svg { stroke: var(--seal); }
+
+  .seal.state-done { border-color: var(--accent); background: var(--accent-soft); }
+  .seal.state-done svg { stroke: var(--accent); }
+
+  .seal.state-error { border-color: var(--error); }
+  .seal.state-error svg { stroke: var(--error); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .seal-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+    max-width: 110px;
+  }
+
+  /* --- draft column --- */
+  .draft-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .draft-header .field-label { margin-bottom: 0; }
+
+  .draft-actions { display: flex; gap: 8px; }
+
+  #draftOutput {
+    min-height: 480px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .empty-state {
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 20px 2px;
+    border: 1px dashed var(--rule-strong);
+    border-radius: var(--radius);
+    background: var(--paper-raised);
+  }
+
+  .error-box {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--error);
+    border-radius: var(--radius);
+    background: #FBEFEC;
+    color: var(--error);
+    font-size: 13px;
+    display: none;
+  }
+
+  .copy-confirm {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+  .copy-confirm.show { opacity: 1; }
+
+  footer {
+    padding: 16px 40px 26px;
+    border-top: 1px solid var(--rule);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Candidate Note Composer</h1>
+    <span class="kicker">Internal &middot; Recruiting</span>
+  </div>
+  <p class="tagline">Paste raw source material on the left. Get a uniform, hiring-manager-ready summary on the right.</p>
+</header>
+
+<main>
+  <section class="panel sources-column">
+    <div class="name-block">
+      <label class="field-label" for="candidateName">Candidate name</label>
+      <input type="text" id="candidateName" placeholder="e.g. Pranay Sharma">
+    </div>
+
+    <label class="field-label">Sources</label>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="transcript" id="tabBtn-transcript">
+        <span class="dot"></span> Interview transcript
+      </button>
+      <button class="tab-btn" data-tab="notes" id="tabBtn-notes">
+        <span class="dot"></span> Existing notes
+      </button>
+      <button class="tab-btn" data-tab="resume" id="tabBtn-resume">
+        <span class="dot"></span> Resume
+      </button>
+    </div>
+
+    <div class="tab-panels">
+      <textarea class="source-textarea active" id="src-transcript" placeholder="Paste the Metaview intake/interview transcript here..."></textarea>
+      <textarea class="source-textarea" id="src-notes" placeholder="Paste existing notes that need to be reformatted here..."></textarea>
+      <textarea class="source-textarea" id="src-resume" placeholder="Paste resume text here (used for additional context, e.g. work history, education)..."></textarea>
+      <p class="source-hint">Fill in whichever sources you have. At least one is required &mdash; feel free to use all three for one candidate.</p>
+    </div>
+
+    <div class="generate-row">
+      <button class="primary" id="generateBtn">Generate note</button>
+      <span class="generate-note" id="generateStatus"></span>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+  </section>
+
+  <div class="seal-column">
+    <div class="seal-wrap">
+      <div class="seal state-idle" id="seal">
+        <div class="ring"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" id="sealIcon">
+          <path d="M12 3l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.6 5-.7L12 3z"></path>
+        </svg>
+      </div>
+      <div class="seal-label" id="sealLabel">Awaiting<br>input</div>
+    </div>
+  </div>
+
+  <section class="panel draft-column">
+    <div class="draft-header">
+      <label class="field-label">Draft note</label>
+      <div class="draft-actions">
+        <span class="copy-confirm" id="copyConfirm">COPIED</span>
+        <button class="ghost" id="copyBtn" disabled>Copy</button>
+        <button class="ghost" id="clearBtn">Clear all</button>
+      </div>
+    </div>
+
+    <div id="emptyState" class="empty-state">
+      Nothing generated yet. Add a candidate name and at least one source, then click <strong>Generate note</strong>. The draft will appear here, formatted as Summary / Key Highlights / Logistics &mdash; and you can edit it directly before copying.
+    </div>
+
+    <textarea id="draftOutput" style="display:none;"></textarea>
+  </section>
+</main>
+
+<footer>
+  Format: Summary &middot; Key Highlights &middot; Logistics — matched to team template
+</footer>
+
+<script>
+  const tabs = ['transcript', 'notes', 'resume'];
+  const sourceValues = { transcript: '', notes: '', resume: '' };
+
+  function switchTab(tab) {
+    tabs.forEach(t => {
+      document.getElementById('tabBtn-' + t).classList.toggle('active', t === tab);
+      document.getElementById('src-' + t).classList.toggle('active', t === tab);
+    });
+  }
+
+  tabs.forEach(t => {
+    document.getElementById('tabBtn-' + t).addEventListener('click', () => switchTab(t));
+    document.getElementById('src-' + t).addEventListener('input', (e) => {
+      sourceValues[t] = e.target.value;
+      const filled = e.target.value.trim().length > 0;
+      document.getElementById('tabBtn-' + t).classList.toggle('filled', filled);
+    });
+  });
+
+  const seal = document.getElementById('seal');
+  const sealIcon = document.getElementById('sealIcon');
+  const sealLabel = document.getElementById('sealLabel');
+
+  function setSealState(state, label) {
+    seal.className = 'seal state-' + state;
+    sealLabel.innerHTML = label;
+  }
+
+  const CHECK_PATH = 'M5 13l4 4L19 7';
+  const STAR_PATH = 'M12 3l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.6 5-.7L12 3z';
+  const ALERT_PATH = 'M12 9v4m0 4h.01M10.3 3.9L2.6 17.5a1 1 0 00.9 1.5h17a1 1 0 00.9-1.5L13.7 3.9a1 1 0 00-1.4 0z';
+
+  function setSealIcon(path) {
+    sealIcon.innerHTML = '<path d="' + path + '"></path>';
+  }
+
+  const generateBtn = document.getElementById('generateBtn');
+  const generateStatus = document.getElementById('generateStatus');
+  const errorBox = document.getElementById('errorBox');
+  const emptyState = document.getElementById('emptyState');
+  const draftOutput = document.getElementById('draftOutput');
+  const copyBtn = document.getElementById('copyBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const copyConfirm = document.getElementById('copyConfirm');
+  const candidateNameInput = document.getElementById('candidateName');
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+  function hideError() {
+    errorBox.style.display = 'none';
+  }
+
+  const SYSTEM_PROMPT = `You are an assistant that writes candidate summary notes for a recruiting team, to be submitted to a hiring manager. You will be given raw source material (any combination of: an interview/intake transcript, existing rough notes, and/or a resume) and a candidate name. Synthesize the sources into ONE clean note that strictly follows this exact template and tone:
+
+Summary
+[A tight 2-4 sentence paragraph giving an overview of the candidate's background, core expertise, and what's motivating their job search / interest in moving. Written in third person, present tense where appropriate, professional and factual, no fluff or generic praise.]
+
+Key Highlights
+* [5-9 bullet points, each a specific, concrete accomplishment, skill area, or experience point. Lead with the most relevant/impressive facts. Be specific: name companies, technologies, scale/scope, and outcomes where available. No vague filler bullets.]
+
+Logistics
+* Location: [only include if known]
+* Work Authorization: [only include if known]
+* Compensation: [only include if known]
+* Notice Period: [only include if known]
+* Job Search Status: [only include if known]
+[Only include the logistics fields that have real information from the sources. Omit any field with no supporting information. If there is other clearly relevant logistics-type information that doesn't fit these labels, add one additional bullet with an appropriate label.]
+
+Rules:
+- Output ONLY the note itself in plain text, starting with "Summary" — no preamble, no markdown headers (no #, no **), no explanations, no closing remarks.
+- Use "*" for bullet points, exactly as shown above.
+- Do not invent facts. Only use information present in the provided sources. If a logistics field has no information available, omit it entirely rather than guessing or writing "unknown."
+- Keep the tone factual and professional, consistent with a note a recruiter would send a hiring manager — never salesy or exaggerated.
+- If multiple sources are provided, reconcile and combine them into a single coherent note rather than repeating information.`;
+
+  generateBtn.addEventListener('click', async () => {
+    hideError();
+    const name = candidateNameInput.value.trim();
+    const hasSource = tabs.some(t => sourceValues[t].trim().length > 0);
+
+    if (!hasSource) {
+      showError('Add at least one source (transcript, notes, or resume) before generating.');
+      return;
+    }
+
+    generateBtn.disabled = true;
+    generateStatus.textContent = 'Generating…';
+    setSealState('working', 'Synthesizing<br>sources');
+    setSealIcon(STAR_PATH);
+
+    let userContent = '';
+    if (name) userContent += `Candidate name: ${name}\n\n`;
+    if (sourceValues.transcript.trim()) {
+      userContent += `--- INTERVIEW / INTAKE TRANSCRIPT ---\n${sourceValues.transcript.trim()}\n\n`;
+    }
+    if (sourceValues.notes.trim()) {
+      userContent += `--- EXISTING NOTES TO REFORMAT ---\n${sourceValues.notes.trim()}\n\n`;
+    }
+    if (sourceValues.resume.trim()) {
+      userContent += `--- RESUME ---\n${sourceValues.resume.trim()}\n\n`;
+    }
+    userContent += 'Write the candidate note now, following the template exactly.';
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: [
+            { role: 'user', content: userContent }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Request failed with status ' + response.status);
+      }
+
+      const data = await response.json();
+      const textBlocks = (data.content || [])
+        .filter(item => item.type === 'text')
+        .map(item => item.text)
+        .join('\n');
+
+      if (!textBlocks.trim()) {
+        throw new Error('No content returned.');
+      }
+
+      draftOutput.value = textBlocks.trim();
+      draftOutput.style.display = 'block';
+      emptyState.style.display = 'none';
+      copyBtn.disabled = false;
+
+      setSealState('done', 'Note<br>formatted');
+      setSealIcon(CHECK_PATH);
+      generateStatus.textContent = 'Draft ready — review and edit before copying.';
+
+    } catch (err) {
+      console.error('Note generation error:', err);
+      showError('Something went wrong generating the note. Please try again.');
+      setSealState('error', 'Generation<br>failed');
+      setSealIcon(ALERT_PATH);
+      generateStatus.textContent = '';
+    } finally {
+      generateBtn.disabled = false;
+    }
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(draftOutput.value);
+      copyConfirm.classList.add('show');
+      setTimeout(() => copyConfirm.classList.remove('show'), 1500);
+    } catch (err) {
+      draftOutput.select();
+      document.execCommand('copy');
+      copyConfirm.classList.add('show');
+      setTimeout(() => copyConfirm.classList.remove('show'), 1500);
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    candidateNameInput.value = '';
+    tabs.forEach(t => {
+      sourceValues[t] = '';
+      document.getElementById('src-' + t).value = '';
+      document.getElementById('tabBtn-' + t).classList.remove('filled');
+    });
+    switchTab('transcript');
+    draftOutput.value = '';
+    draftOutput.style.display = 'none';
+    emptyState.style.display = 'block';
+    copyBtn.disabled = true;
+    generateStatus.textContent = '';
+    hideError();
+    setSealState('idle', 'Awaiting<br>input');
+    setSealIcon(STAR_PATH);
+  });
+</script>
+
+</body>
+</html>
